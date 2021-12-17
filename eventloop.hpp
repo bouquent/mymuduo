@@ -9,6 +9,7 @@
 #include "noncopyable.hpp"
 #include "timestamp.hpp"
 #include "currentthread.hpp"
+#include "timerqueue.hpp"
 
 class Channel;
 class Poller;
@@ -36,6 +37,12 @@ public:
     /*判断EventLoop是否在自己的线程中*/
     bool isInLoopThread() const { return threadId_ == CurrentThread::tid();}
 
+    /*添加删除定时器*/
+    TimerId runAt(const Timestamp& time, const TimerCallback& cb);
+    TimerId runAfter(double delay, const TimerCallback& cb);
+    TimerId runEvery(double interval, const TimerCallback& cb);
+    void cancel(TimerId timerId);
+
 private:
     void handleRead();        /*wakeup的读事件处理函数*/
     void doPendingFunctor();  /*执行所有活跃的channel回调*/
@@ -52,7 +59,9 @@ private:
     std::unique_ptr<Channel> wakeupChannel_;
     Timestamp pollReturnTime_;
     std::unique_ptr<Poller> poller_;
-    
+    std::unique_ptr<TimerQueue> timerQueue_;
+
+
     ChannelList activeChannels_;        /*所有活跃的channel(有事件发生，等待执行回调函数的channel)*/
     Channel* currentActiveChannel_;     /*正在处理的channel*/
     bool eventHanding_;                 /*防止正在处理的channel被删除*/

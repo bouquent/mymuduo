@@ -17,6 +17,8 @@ public:
     static Timestamp now();
     static Timestamp invaild() { return Timestamp(0); } /*生成一个被初始化为0的对象*/
     std::string toString() const;
+
+    static const int kmircoSecondsPreSecond = 1000 * 1000;
 private:
     uint64_t mircoseconds_;
 };
@@ -28,7 +30,7 @@ inline bool operator<(Timestamp lhs, Timestamp rhs)
 
 inline Timestamp addTime(Timestamp timestamp, double seconds)
 {
-    int64_t delta = static_cast<int64_t>(seconds);
+    uint64_t delta = static_cast<int64_t>(seconds);
     return Timestamp(delta + timestamp.mircoseconds());
 }
 

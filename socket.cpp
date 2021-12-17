@@ -33,12 +33,15 @@ void Socket::listen()
     }
 }
 
-int Socket::accept(InetAddr *perrAddr)
+int Socket::accept(InetAddr *peerAddr)
 {
     struct sockaddr_in cli_addr;
     bzero(&cli_addr, sizeof(cli_addr));
     socklen_t len = sizeof(cli_addr);
     int connfd = ::accept(sockfd_, (struct sockaddr*) &cli_addr, &len);
+    if (connfd >= 0) {
+        peerAddr->setSockAddr(cli_addr);
+    }
     return connfd;
 }
 

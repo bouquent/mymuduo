@@ -7,6 +7,7 @@
 /*读取fd文件描述符中的数据*/
 size_t Buffer::readFd(int sockfd, int *saveerrno)
 {
+    //因为tcp报文最大也只有65535
     char extrabuf[65536] = {0};
 
     /*防止剩余缓冲区无法接受所来的全部数据，所有使用一个临时的extrabuf帮助临时存储数据*/
@@ -37,7 +38,6 @@ size_t Buffer::writeFd(int sockfd, int *saveerrno)
     if (n < 0) {
         *saveerrno = errno;
     }
-
     return n;
 }
 
@@ -69,6 +69,8 @@ std::string Buffer::retrieveAsString(size_t len)
     return result;
 }
 
+
+
 /*请保证可以写入len长度的数据(不够则扩容)*/
 void Buffer::ensureWriteableBytes(size_t len)     
 {
@@ -79,7 +81,7 @@ void Buffer::ensureWriteableBytes(size_t len)
 
 void Buffer::makeSpace(size_t len)
 {
-    if (readerIndex_ + writeableBytes() < len) {
+    if (readerIndex_ + writeableBytes() < len + kCheapPrepend) {
         buffer_.resize(writerIndex_ + len);
     } else {
         // | prepend | readerindex  | writeindex | 将读缓冲区前方的空余部分和写缓冲区之和大于所需写的大小，所以讲他们合并   
