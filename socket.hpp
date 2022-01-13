@@ -1,6 +1,10 @@
 #ifndef SOCKET_H
 #define SOCKET_H
 
+#include "noncopyable.hpp"
+#include "inetaddr.hpp"
+
+
 #include "inetaddr.hpp"
 
 class Socket
@@ -9,18 +13,18 @@ public:
     explicit Socket(int sockfd);
     ~Socket();
 
-    void bindAddress(const InetAddr &LocalAddr);
+    void bindAddr(const InetAddr &LocalAddr);
     void listen();
     int accept(InetAddr *perrAddr);
 
-    void shunDownWrite(bool on = true);
+    void shutDownWrite(bool on = true);
     //socketopt的一些设置
     void setTcpNoDelay(bool on);
     void setReuseAddr(bool on);
     void setReusePort(bool on);
     void setKeepAlive(bool on);
 
-    const int fd() const { return sockfd_; }
+    int fd() const { return sockfd_; }
 private:
     const int sockfd_;
 };

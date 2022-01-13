@@ -13,6 +13,7 @@
 
 using namespace std::placeholders;
 
+
 static EventLoop* CheckLoopNotNull(EventLoop* loop)
 {
     if (nullptr == loop) {
@@ -28,7 +29,7 @@ TcpServer::TcpServer(EventLoop *loop,
     : baseLoop_(CheckLoopNotNull(loop))
     , ipPort_(addr.toIpPort())
     , name_(nameArg)
-    , acceptor_(new Acceptor(loop, addr))
+    , acceptor_(new Acceptor(loop, addr, option))
     , threadPool_(new EventLoopThreadPool(loop, nameArg))
     , started_(0)
     , nextConnId_(0)
@@ -88,14 +89,13 @@ void TcpServer::newConnection(int sockfd, const InetAddr &peerAddr)
                                         , localAddr
                                         , peerAddr
                                         ));
-    connections_[connName] = conn;
-
-    /*用户设置的回调函数*/
+    connections_.insert({connName, conn});
+     /*用户设置的回调函数*/
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
     conn->setWriteCompleteCallback(writeCompleteCallback_);
 
-    /*关闭连接的回调函数,这里的占位参数就是TcpConnectionPtr*/
+    //这个回调其实主要为了删除connections_中的数据
     conn->setCloseCallback(std::bind(&TcpServer::removeConnection, this, std::placeholders::_1));
     
     //让该用户加入poller中进行监听                                    

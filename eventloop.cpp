@@ -27,17 +27,38 @@ int createEventFd()
     return wakeupFd;
 }
 
+//向wakeupFd写数据,唤醒阻塞在poll的线程去执行回调函数
+void EventLoop::wakeUp()
+{
+    uint64_t howmany = 1;
+    int ret = write(wakeupFd_, &howmany, sizeof(uint64_t));
+    if (ret == -1 && errno != EINTR) {
+        LOG_ERROR("[%s]:[%s] wakeupFd write error, errno is %d", __FILE__, __func__, errno);
+    } 
+}
+
+/*wakeup的读事件处理函数,将用来唤醒写入的一个字节读取*/
+void EventLoop::handleRead()
+{
+    uint64_t howmany;
+    int ret = read(wakeupFd_, &howmany, sizeof(uint64_t));
+    if (ret != sizeof(uint64_t)) {
+        LOG_ERROR("[%s]:[%s] wakeupFd read error, errno is %d", __FILE__, __func__, errno);
+    }
+}
+
+
 EventLoop::EventLoop()
-    : looping_(false)
+    : threadId_(CurrentThread::tid())  
+    , looping_(false)
     , quit_(false)
     , wakeupFd_(createEventFd())
     , wakeupChannel_(new Channel(this, wakeupFd_))
     , poller_(Poller::newDefaultPoller(this))
     , timerQueue_(new TimerQueue(this))
     , currentActiveChannel_(nullptr)
-    , callingPendingFunctor_(false)
-    , threadId_(CurrentThread::tid())
     , eventHanding_(false)
+    , callingPendingFunctor_(false)
 {
     if (t_loopInThisThread == nullptr) {
         t_loopInThisThread = this;
@@ -63,11 +84,13 @@ void EventLoop::loop()
     while (!quit_) {
         activeChannels_.clear();    /*将上一次处理的任务清空*/
         pollReturnTime_ = poller_->poll(kPollTimeMs, &activeChannels_);
+        eventHanding_ = true;
         for (auto channel : activeChannels_) {
             /*执行每个活跃的channel的回调函数(客户层面的业务)*/
             currentActiveChannel_ = channel;
             channel->handleEvent(pollReturnTime_);
         }
+        eventHanding_ = false;
         currentActiveChannel_ = nullptr;
 
         /*执行EventLoop层面的业务回调*/
@@ -78,14 +101,14 @@ void EventLoop::loop()
 }
 
 
-void EventLoop::doPendingFunctor()  /*执行所有活跃的channel回调*/
+void EventLoop::doPendingFunctor()  
 {
     std::vector<Functor> functors;
     callingPendingFunctor_ = true;
     {
         std::lock_guard<std::mutex> guard(mutex_);
         /*快速获取pendingFunctor的回调并且置空*/
-        functors.swap(PendingFunctor_);
+        functors.swap(pendingFunctor_);
     }
     for (auto functor : functors) {
         functor();
@@ -100,7 +123,7 @@ void EventLoop::quit()
     quit_ = true;
     if (!isInLoopThread()) {
         /*在别的线程中调用的这个EventLoop,唤醒阻塞在epoll_wait上的线程,让它快速结束整个loop循环*/
-        wakeUp();
+        this->wakeUp();
     }
 }
 
@@ -113,25 +136,23 @@ void EventLoop::runInLoop(Functor cb)
         /*操作loop的不是当前线程，加入这个loop的等待执行队列中*/
         queueInLoop(cb);
     }
-
 }
 
 void EventLoop::queueInLoop(Functor cb)
 {
     {
         std::lock_guard<std::mutex> guard(mutex_);
-        PendingFunctor_.push_back(cb);
+        pendingFunctor_.push_back(cb);
     }
-    if (!isInLoopThread() || callingPendingFunctor_)
+    if (!isInLoopThread() || callingPendingFunctor_ || eventHanding_)
     {
         /*1. 不在当前线程中调用loop，唤醒阻塞在epoll_wait中的线程，去执行回调
-        * 2. 正在执行functor回调,该线程执行这一次后，下一次epoll_wait不阻塞直接去执行回调
+        * 2. 正在执行functor回调或者channel回调,该线程执行这一次后，下一次epoll_wait不阻塞直接去执行回调
         *  都是为了让回调操作快速被执行
         */
-       wakeUp();
+       this->wakeUp();
     }
 }
-
 
 /*实现channel和poller之间的通信*/
 void EventLoop::updateChannel(Channel* channel)
@@ -151,31 +172,8 @@ bool EventLoop::hasChannel(Channel* channel)
     return poller_->hasChannel(channel);
 }
 
-//向wakeupFd写数据,唤醒阻塞在poll的线程去执行回调函数
-void EventLoop::wakeUp()
-{
-    uint64_t one = 1;
-    int ret = write(wakeupFd_, &one, sizeof(one));
-    if (ret == -1) {
-        LOG_ERROR("[%s]:%s send error", __FILE__, __func__);
-    }
-}
 
-/*wakeup的读事件处理函数,将用来唤醒写入的一个字节读取*/
-void EventLoop::handleRead()     
-{
-    uint64_t one = 1;
-    int ret = read(wakeupFd_, &one, sizeof(one));
-    if (ret != sizeof(one)) {
-
-
-        LOG_ERROR("[%s]:%s recv error", __FILE__, __func__);
-    }
-}
-
-
-
-TimerId EventLoop::runAt(const Timestamp& time, const TimerCallback& cb)
+TimerId EventLoop::runAt(Timestamp time, const TimerCallback& cb)
 {
     return timerQueue_->addTimer(cb, time, 0.0);
 }
@@ -193,3 +191,4 @@ void EventLoop::cancel(TimerId timerId)
 {
     timerQueue_->cancel(timerId);
 }
+

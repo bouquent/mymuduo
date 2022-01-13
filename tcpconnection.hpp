@@ -6,6 +6,8 @@
 #include "socket.hpp"
 #include "buffer.hpp"
 #include "callbacks.hpp"
+#include "timestamp.hpp"
+#include "eventloop.hpp"
 
 #include <memory>
 #include <string>
@@ -34,8 +36,8 @@ public:
     void connectionDestoryed();
     void connectionEstablished();
 
-    void send(const std::string& buf);            /*发送数据*/
-    void shutDown();        /*关闭连接*/
+    void send(const std::string& buf);         /*发送数据*/
+    void shutDown();                           /*关闭连接*/
 
     bool connected() { return state_ == kConnected; }
     EventLoop *getLoop() { return loop_; }
@@ -61,7 +63,7 @@ private:
     void handleError();
 
     void sendInLoop(const void* message, size_t len);
-    void shutdownInLoop();
+    void shutDownInLoop();
 private:
 
     enum StateE 
@@ -73,7 +75,6 @@ private:
     };
     void setState(StateE state) { state_ = state; }
     std::atomic_int state_;
-    bool reading_;
     EventLoop *loop_;
     const std::string name_;
 

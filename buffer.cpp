@@ -5,7 +5,7 @@
 #include <sys/uio.h>
    
 /*读取fd文件描述符中的数据*/
-size_t Buffer::readFd(int sockfd, int *saveerrno)
+size_t Buffer::readFd(int sockfd, int *saverrno)
 {
     //因为tcp报文最大也只有65535
     char extrabuf[65536] = {0};
@@ -20,7 +20,7 @@ size_t Buffer::readFd(int sockfd, int *saveerrno)
 
     ssize_t n = ::readv(sockfd, vec, iovcnt);
     if (n < 0) {
-        *saveerrno = errno;
+        *saverrno = errno;
     } else if (n <= writeableBytes()) {
         writerIndex_ += n;
     } else {
@@ -41,7 +41,7 @@ size_t Buffer::writeFd(int sockfd, int *saveerrno)
     return n;
 }
 
-void Buffer::retrieve(size_t len)                  /*将len长度的缓冲弄收回*/
+void Buffer::retrieve(size_t len)                  /*将len长度的读缓冲收回*/
 {
     if (len < readableBytes()) {
         readerIndex_ += len;    /*回收一部分可读缓冲区*/

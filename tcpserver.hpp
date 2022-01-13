@@ -23,8 +23,8 @@ class TcpServer : noncopyable
 public:
     enum Option
     {
-        kNoReuseAddr,
-        kReuseAddr,
+        kNoReusePort,
+        kReusePort,
     };
 public:
     using ThreadInitCallback = std::function<void(EventLoop*)>;
@@ -32,7 +32,7 @@ public:
     TcpServer(EventLoop *loop, 
             const InetAddr& addr, 
             const std::string& nameArg, 
-            Option option = kNoReuseAddr);
+            Option option = kReusePort);
     ~TcpServer();
 
 

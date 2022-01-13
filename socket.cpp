@@ -6,8 +6,8 @@
 #include <unistd.h>
 #include <netinet/tcp.h>
 
-Socket::Socket(int sockfd)
-    : sockfd_(sockfd) 
+Socket::Socket(int fd)
+    : sockfd_(fd)
 {}
 
 Socket::~Socket()
@@ -15,13 +15,12 @@ Socket::~Socket()
     ::close(sockfd_);
 }
 
-
-void Socket::bindAddress(const InetAddr &LocalAddr)
+void Socket::bindAddr(const InetAddr& localAddr)
 {
-    struct sockaddr_in ser_addr = LocalAddr.getSockAddr();
+    struct sockaddr_in ser_addr = localAddr.getSockAddr();
     int ret = ::bind(sockfd_, (struct sockaddr*) &ser_addr, sizeof(ser_addr));
     if (ret != 0) {
-        LOG_FATAL("[%s]:%s bind wrong!", __FILE__, __func__);
+        LOG_FATAL("[%s]:[%s] socket bind error!", __FILE__, __func__);
     }
 }
 
@@ -29,16 +28,18 @@ void Socket::listen()
 {
     int ret = ::listen(sockfd_, 1024);
     if (ret != 0) {
-        LOG_FATAL("[%s]:%s listen wrong!", __FILE__, __func__);
+        LOG_FATAL("[%s]:[%s] socket listen error!", __FILE__, __func__);
     }
 }
 
-int Socket::accept(InetAddr *peerAddr)
+
+int Socket::accept(InetAddr* peerAddr)
 {
     struct sockaddr_in cli_addr;
     bzero(&cli_addr, sizeof(cli_addr));
     socklen_t len = sizeof(cli_addr);
     int connfd = ::accept(sockfd_, (struct sockaddr*) &cli_addr, &len);
+
     if (connfd >= 0) {
         peerAddr->setSockAddr(cli_addr);
     }
@@ -46,7 +47,7 @@ int Socket::accept(InetAddr *peerAddr)
 }
 
 
-void Socket::shunDownWrite(bool on)
+void Socket::shutDownWrite(bool on)
 {
     if (::shutdown(sockfd_, SHUT_WR) < 0) {
         LOG_ERROR("[%s]:%s shundown error!\n", __FILE__, __func__);

@@ -7,18 +7,16 @@
 #include <memory>
 
 EventLoopThread::EventLoopThread(const ThreadInitCallback& cb, const std::string& name)
-    : callback_(cb)
-    , exiting_(true)
-    , thread_(std::bind(&EventLoopThread::threadFunc, this), name)
-    , loop_(nullptr)
-    , mutex_()
-    , cond_()
+                        : threadInitCallback_(cb)
+                        , loop_(nullptr)
+                        , thread_(std::bind(&EventLoopThread::threadFunc, this), name)
+                        , exiting_(false)
 {}
 
 EventLoopThread::~EventLoopThread()
 {
     exiting_ = true;
-    if (loop_ != nullptr) { 
+    if (loop_) {
         loop_->quit();
         thread_.join();
     }
@@ -28,10 +26,10 @@ EventLoop* EventLoopThread::startLoop()
 {
     thread_.start();
 
-    EventLoop *loop = nullptr;
+    EventLoop* loop = nullptr;
     {
         std::unique_lock<std::mutex> lock(mutex_);
-        while (nullptr == loop_) {
+        while (loop_ == nullptr) {
             cond_.wait(lock);
         }
         loop = loop_;
@@ -42,18 +40,20 @@ EventLoop* EventLoopThread::startLoop()
 void EventLoopThread::threadFunc()
 {
     EventLoop loop;
-    if (callback_) {
-        callback_(&loop);
+    
+    if (threadInitCallback_) {
+        threadInitCallback_(&loop);
     }
 
     {
         std::unique_lock<std::mutex> lock(mutex_);
         loop_ = &loop;
-        cond_.notify_one();
+        cond_.notify_all();
     }
-    loop.loop();
 
-    /*如果loop函数执行结束，说明这个loop以及对应的Poller即将结束*/
-    std::lock_guard<std::mutex> guard(mutex_);
+    loop_->loop();
+
+    //如果出loop函数，说明这个线程即将结束了
+    std::lock_guard<std::mutex> lock(mutex_);
     loop_ = nullptr;
 }

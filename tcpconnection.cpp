@@ -3,6 +3,7 @@
 #include "channel.hpp"
 #include "logging.hpp"
 #include "callbacks.hpp"
+#include "buffer.hpp"
 
 #include <functional>
 #include <errno.h>
@@ -13,7 +14,7 @@ using namespace std::placeholders;
 static EventLoop* CheckLoopNotNull(EventLoop* loop)
 {
     if (nullptr == loop) {
-        LOG_FATAL("mainloop cannot be nullptr!\n");
+        LOG_FATAL("tcpconnection loop cannot be nullptr!\n");
     }
     return loop;
 }
@@ -24,14 +25,13 @@ TcpConnection::TcpConnection(EventLoop *loop,
                 int sockfd,
                 const InetAddr &localAddr,
                 const InetAddr &perrAddr)
-    : loop_(CheckLoopNotNull(loop))
+    : state_(kDisConnecting) 
+    , loop_(CheckLoopNotNull(loop))
     , name_(name)
     , socket_(new Socket(sockfd))
     , channel_(new Channel(loop, sockfd))
     , localAddr_(localAddr)
     , peerAddr_(perrAddr)
-    , state_(kDisConnecting)
-    , reading_(true)
 {
     channel_->setReadCallback(std::bind(&TcpConnection::handleRead, this, _1));
     channel_->setWriteCallback(std::bind(&TcpConnection::handleWrite, this));
@@ -68,7 +68,6 @@ void TcpConnection::connectionDestoryed()
     }
     channel_->remove();                 /*从poller中摘除该channel_*/
 }
-
 
 
 
@@ -113,7 +112,7 @@ void TcpConnection::sendInLoop(const void* message, size_t len)
             nwrote = 0;
             if (errno != EWOULDBLOCK) {
                 /*如果不是非阻塞写空返回的错误信号*/
-                LOG_ERROR("[%s]:%s", __FILE__, __func__);
+                LOG_ERROR("[%s]:%s write error", __FILE__, __func__);
                 if (errno == EPIPE || errno ==  ECONNRESET) {
                     faultError = true;
                 }
@@ -127,15 +126,12 @@ void TcpConnection::sendInLoop(const void* message, size_t len)
 
             /*添加剩余数据*/
             outputBuffer_.append(static_cast<const char*>(message) + nwrote, remaining);
-            if (channel_->isWriting()) {
+            if (!channel_->isWriting()) {
                 channel_->enableWriting();
             }
         }
-
-
     }
 }
-
 
 
 /*关闭连接(单方面关闭)*/
@@ -143,21 +139,19 @@ void TcpConnection::shutDown()
 {
     if (state_ == kConnected) {
         setState(kDisConnecting);
-        loop_->runInLoop(std::bind(&TcpConnection::shutdownInLoop, this));
+        loop_->runInLoop(std::bind(&TcpConnection::shutDownInLoop, this));
     }
 }
-void TcpConnection::shutdownInLoop()
+void TcpConnection::shutDownInLoop()
 {
     /*这里有两种情况
     * 1 有读写事件正在读，先暂时不关闭，等待它读完后，会再一次调用这个函数(根据kDisConnecting状态)进行关闭
     * 2 没有读写事件，直接调用关闭函数
     */
-    if (channel_->isWriting()) {
-        socket_->shunDownWrite();
+    if (!channel_->isWriting()) {
+        socket_->shutDownWrite();
     }
 }
-
-
 
 
 /*读事件回调函数*/
@@ -195,8 +189,8 @@ void TcpConnection::handleWrite()
                 }
             }
             if (state_ == kDisConnecting) {
-                /*发送数据的途中，服务器启动了关闭命令，数据发完后执行完毕函数*/
-                shutdownInLoop();
+               //写数据的时候这个TcpConnection关闭了，在handlewrite里面一定是subloop在操作，所以直接调用shutdowninloop
+                shutDownInLoop();
             }
 
         } else {

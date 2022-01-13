@@ -1,55 +1,49 @@
 #ifndef TIMERQUEUE_H
 #define TIMERQUEUE_H
 
-#include "timer.hpp"
 #include "timerid.hpp"
-#include "channel.hpp"
+#include "timer.hpp"
 #include "noncopyable.hpp"
-#include "timestamp.hpp"
+#include "channel.hpp"
 
 #include <set>
 #include <vector>
-#include <utility>
+
 class EventLoop;
 
-class TimerQueue : noncopyable
+class TimerQueue : noncopyable 
 {
 public:
-    TimerQueue(EventLoop *loop);
+    explicit TimerQueue(EventLoop*);
     ~TimerQueue();
 
-    TimerId addTimer(const TimerCallback &cb, 
-                    Timestamp when,
-                    double interval);
-        
+    TimerId addTimer(const TimerCallback& cb, Timestamp when, double interval);
     void cancel(TimerId timerId);
-
 private:
-    using Entry = std::pair<Timestamp, Timer*>;
+    using Entry = std::pair<Timestamp, Timer*>;  //时间， 定时器
     using TimerList = std::set<Entry>;
-    using ActiveTimer = std::pair<Timer*, int64_t>;
+    using ActiveTimer = std::pair<Timer*, int64_t>; // 定时器，序号
     using ActiveTimerSet = std::set<ActiveTimer>;
-    
-    void addTimerInLoop(Timer *timer);
+
+    bool insert(Timer*);            //返回bool类型 主要是为了判断是否需要重新设置定时超时的时间
+    void addTimerInLoop(Timer*);
     void cancelInLoop(TimerId timerId);
 
-    void handleRead();    /*定时器时间产生的回调函数*/
+    void handleRead();                               //取出timerfd中的uint64_t，以免timerfd描述符一直触发事件
+    std::vector<Entry> getExpired(Timestamp now);    //返回超时的定时器
+    void reset(const std::vector<Entry>& expired, Timestamp now);
 
-    std::vector<Entry> getExpired(Timestamp now); /*返回超时的定时任务*/
-
-    void reset(const std::vector<Entry>& expired, Timestamp now); /*对超时的定时器进行重置，因为超时的定时器可能是重复的定时器*/
-
-    bool insert(Timer *timer);  /*插入定时器*/
 private:
-    EventLoop *loop_;
+    EventLoop* loop_;
     const int timerfd_;
     Channel timerfdChannel_;
-    TimerList timers_;              /*按时间戳进行排序*/
 
-    ActiveTimerSet activeTimers_;   /*活跃定时器列表，按地址进行排序*/
+    TimerList timers_;
+    ActiveTimerSet activeTimers_;
+    ActiveTimerSet cancelingTimers_;
     bool callingExpiredTimers_;
-    ActiveTimerSet cancelingTimers_;/*被取消的定时器*/
 };
+
 
 
 #endif

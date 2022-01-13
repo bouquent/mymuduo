@@ -3,6 +3,7 @@
 
 #include <sys/socket.h>
 #include <unistd.h>
+#include <errno.h>
 
 
 int createSocket()
@@ -16,16 +17,16 @@ int createSocket()
 }
 
 
-Acceptor::Acceptor(EventLoop *loop, const InetAddr& addr)
+Acceptor::Acceptor(EventLoop *loop, const InetAddr& addr, bool option)
     : baseLoop_(loop)
     , acceptSocket_(createSocket())
     , acceptChannel_(loop, acceptSocket_.fd())   //这里注意acceptorSocket_要在acceptChannel_之前声明
     , listening_(false)
 {
-    acceptSocket_.bindAddress(addr);
+    acceptSocket_.bindAddr(addr);
     acceptSocket_.setReuseAddr(true);
-    acceptSocket_.setReusePort(true);
-    acceptSocket_.setKeepAlive(true);
+    acceptSocket_.setReusePort(option);
+    acceptSocket_.setKeepAlive(option);
 
     /*有新用户连接，则调用回调handleRead*/
     acceptChannel_.setReadCallback(std::bind(&Acceptor::handleRead, this));
@@ -45,25 +46,26 @@ void Acceptor::listen()
     acceptSocket_.listen();
     acceptChannel_.enableReading();
 
-    LOG_INFO("server started to listen");
+    LOG_INFO("server started to listen!");
 }
 
 void Acceptor::handleRead()
 {
-    InetAddr cliaddr;
-    int connfd = acceptSocket_.accept(&cliaddr);
+    InetAddr peeraddr;
+    int connfd = acceptSocket_.accept(&peeraddr);
     if (connfd > 0) {
         if (newConnectionCallback_) {
-            newConnectionCallback_(connfd, cliaddr);
+            newConnectionCallback_(connfd, peeraddr);
         } else {
-            LOG_ERROR("[%s]:%s newConnctionCallback is nullptr", __FILE__, __func__);
+            LOG_ERROR("[%s]:%s newConnctionCallback is nullptr, cannot connect new client!", __FILE__, __func__);
             ::close(connfd);
         }
 
     } else {
-        LOG_ERROR("[%s]:%s accept error", __FILE__, __func__);
+        LOG_ERROR("[%s]:%s accept error, errno is %d", __FILE__, __func__, errno);
         if (errno == EMFILE) {
-            LOG_ERROR("err is EMFILE, the server reached limit!\n");
+            LOG_ERROR("accpet error because the file open too much!");
         }
     }
 }
+

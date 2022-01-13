@@ -3,7 +3,8 @@
 #include <arpa/inet.h>
 #include <strings.h>
 
-InetAddr::InetAddr(std::string ip, uint16_t port)
+
+InetAddr::InetAddr(const std::string& ip, uint16_t port)
 {
     bzero(&addr_, sizeof(addr_));
     addr_.sin_family = AF_INET;
@@ -11,7 +12,7 @@ InetAddr::InetAddr(std::string ip, uint16_t port)
     addr_.sin_port = htons(port);
 }
 
-InetAddr::InetAddr(sockaddr_in addr) 
+InetAddr::InetAddr(const struct sockaddr_in& addr) 
     : addr_(addr)
 {}
 

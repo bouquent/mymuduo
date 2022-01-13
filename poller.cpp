@@ -1,17 +1,18 @@
 #include "poller.hpp"
+#include "channel.hpp"
 
-Poller::Poller(EventLoop *loop)
+Poller::Poller(EventLoop* loop)
     : loop_(loop)
 {}
 
+Poller::~Poller()
+{}
 
-bool Poller::hasChannel(Channel *channel)
+bool Poller::hasChannel(Channel* channel)
 {
-    auto iter = channelMap_.find(channel->fd());
-    if (iter != channelMap_.end() && iter->first == channel->fd()) 
+    auto iter = channels_.find(channel->fd());
+    if (iter != channels_.end() && iter->second == channel) {
         return true;
+    }
     return false;
 }
-
-
-Poller::~Poller() = default;

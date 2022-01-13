@@ -1,6 +1,13 @@
 #ifndef ACCEPTOR_H
 #define ACCEPTOR_H
 
+#include "noncopyable.hpp"
+#include "channel.hpp"
+#include "socket.hpp"
+
+#include <functional>
+
+
 #include "channel.hpp"
 #include "socket.hpp"
 #include "inetaddr.hpp"
@@ -12,7 +19,7 @@ class Acceptor
 public:
     using NewConnectionCallback = std::function<void(int, const InetAddr&)>;
 
-    Acceptor(EventLoop *loop, const InetAddr& addr);
+    Acceptor(EventLoop *loop, const InetAddr& addr, bool option = true);
     ~Acceptor();
     void setNewConnectionCallback(const NewConnectionCallback &cb) { newConnectionCallback_ = std::move(cb); }
 

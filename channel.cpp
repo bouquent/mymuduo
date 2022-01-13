@@ -1,10 +1,10 @@
  #include "channel.hpp"
- #include <sys/epoll.h>
  #include "eventloop.hpp"
  
- const int Channel::kNoneEvent = 0;
- const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
- const int Channel::kWriteEvent = EPOLLOUT;
+#include <sys/epoll.h>
+const int Channel::kNoneEvent = 0;
+const int Channel::kReadEvent = EPOLLIN | EPOLLPRI;
+const int Channel::kWriteEvent = EPOLLOUT;
  
 Channel::Channel(EventLoop *loop, int fd)
     : loop_(loop)
@@ -45,6 +45,8 @@ void Channel::handleEventWithGuard(Timestamp time)
     }
   }
 
+  //当收到带外数据一般出发EPOLLPRI，带外数据一般值那些需要进行紧急处理的数据，设置了BSD指针的
+  //在send的最后一个参数加上MSG_OOB选项可以发送带外数据
   if (revents_ & (EPOLLPRI | EPOLLIN)) {
     if (readCallback_) 
        readCallback_(time);
@@ -80,3 +82,4 @@ void Channel::remove()
 {
   loop_->removeChannel(this);
 }
+

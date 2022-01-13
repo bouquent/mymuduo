@@ -27,10 +27,14 @@ inline bool operator<(Timestamp lhs, Timestamp rhs)
 {
     return lhs.mircoseconds() < rhs.mircoseconds();
 }
+inline bool operator>(Timestamp lhs, Timestamp rhs)
+{
+    return lhs.mircoseconds() > rhs.mircoseconds();
+}
 
 inline Timestamp addTime(Timestamp timestamp, double seconds)
 {
-    uint64_t delta = static_cast<int64_t>(seconds);
+    uint64_t delta = static_cast<int64_t>(seconds * Timestamp::kmircoSecondsPreSecond);
     return Timestamp(delta + timestamp.mircoseconds());
 }
 

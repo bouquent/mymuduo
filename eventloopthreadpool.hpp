@@ -4,8 +4,8 @@
 #include "noncopyable.hpp"
 
 #include <functional>
-#include <string>
 #include <vector>
+#include <string>
 #include <memory>
 
 class EventLoop;
@@ -15,31 +15,25 @@ class EventLoopThreadPool : noncopyable
 {
 public:
     using ThreadInitCallback = std::function<void(EventLoop*)>;
-
     EventLoopThreadPool(EventLoop* baseLoop, const std::string& name = std::string());
     ~EventLoopThreadPool();
 
-    void start(const ThreadInitCallback& cb = ThreadInitCallback());
+    void start(const ThreadInitCallback& cb);
     EventLoop* getNextLoop();
 
-    /*设置线程(subloop)数量，如果为0则只有一个mainloop在执行服务*/
-    void setThreadNum(int numThreads) { numThreads_ = numThreads; }
-
-    bool started() const { return started_; }
-    const std::string& name() const { return name_; }
-    std::vector<EventLoop*> getAllLoops() const { return loops_; }
+    //设置线程(subloop)数量，如果为0则只有一个mainloop在执行服务
+    void setThreadNum(int threadNums) {threadNums_ = threadNums; }
+    int getThreadNum() const { return threadNums_; }
+    std::string name() const { return name_; }
+    const std::vector<EventLoop*> getAllLoop() const { return loops_; }
 private:
-    ThreadInitCallback callback_;
-
-    EventLoop *baseLoop_;   /*main subloop*/
+    EventLoop* baseLoop_;
     std::string name_;
-    bool started_;      /*是否创建了子线程(subloop)*/  
-    int numThreads_;    /*subloop的数量*/
-    int next_;          /*下一个接受服务用户的loop*/
-
+    bool started_;
     std::vector<std::unique_ptr<EventLoopThread>> threads_;
     std::vector<EventLoop*> loops_;
+    int next_;
+    int threadNums_;
 };
-
 
 #endif

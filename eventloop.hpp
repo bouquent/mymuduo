@@ -1,5 +1,6 @@
 #ifndef EVENTLOOP_H
 #define EVENTLOOP_H
+
 #include <memory>
 #include <atomic>
 #include <vector>
@@ -34,11 +35,11 @@ public:
     void removeChannel(Channel*);
     bool hasChannel(Channel*);
 
-    /*判断EventLoop是否在自己的线程中*/
+    /*判断EventLoop是否在自己的线程中， threadId_是个线程全局变量，每个线程一份*/
     bool isInLoopThread() const { return threadId_ == CurrentThread::tid();}
 
     /*添加删除定时器*/
-    TimerId runAt(const Timestamp& time, const TimerCallback& cb);
+    TimerId runAt(Timestamp time, const TimerCallback& cb);
     TimerId runAfter(double delay, const TimerCallback& cb);
     TimerId runEvery(double interval, const TimerCallback& cb);
     void cancel(TimerId timerId);
@@ -67,7 +68,7 @@ private:
     bool eventHanding_;                 /*防止正在处理的channel被删除*/
 
     std::atomic_bool callingPendingFunctor_;   /*正在执行回调*/
-    std::vector<Functor> PendingFunctor_;      /*存储所有进行*/
+    std::vector<Functor> pendingFunctor_;      /*存储所有进行*/
     std::mutex mutex_;                         /*用于保护上面的vector<Functor>线程安全*/
 };
 

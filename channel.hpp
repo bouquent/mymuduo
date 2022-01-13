@@ -1,5 +1,6 @@
 #ifndef CHANNEL_H
 #define CHANNEL_H
+
 #include "timestamp.hpp"
 #include "noncopyable.hpp"
 #include <functional>
@@ -34,13 +35,12 @@ public:
     void disableReading() { events_ &= ~kReadEvent; update(); }
     void enableWriting() { events_ |= kWriteEvent; update(); }
     void disableWriting() { events_ &- ~kWriteEvent; update(); }
-    void disableAll() { events_ &= 0; update(); }
+    void disableAll() { events_ &= kNoneEvent; update(); }
 
     //当前events的状态
     bool isReading() { return events_ &= kReadEvent; }
     bool isWriting() { return events_ &= kWriteEvent; }
     bool isNoneEvent() { return events_ == kNoneEvent; }
-
 
     /*设置相应的回调函数*/
     void setWriteCallback(EventCallback cb) { writeCallback_ = std::move(cb); }
@@ -78,4 +78,7 @@ private:
     ReadEventCallback readCallback_;
 };
 
-#endif
+
+
+#endif 
+
