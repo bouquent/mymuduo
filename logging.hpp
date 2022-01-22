@@ -2,6 +2,7 @@
 #define LOGGING_H
 
 #include "noncopyable.hpp"
+#include <iostream>
 
 #define LOG_INFO(logFormat, ...) \
     do { \
