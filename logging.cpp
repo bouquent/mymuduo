@@ -1,6 +1,5 @@
 #include "logging.hpp"
 #include "timestamp.hpp"
-#include <iostream>
 
 Logger::Logger()
     : loglevel_(INFO)
