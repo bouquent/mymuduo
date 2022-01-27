@@ -1,2 +1,1 @@
-cmake .. && make
-to build lib file.
+cmake .. && make       to build executable file

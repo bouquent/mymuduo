@@ -3,6 +3,8 @@
 
 #include "noncopyable.hpp"
 
+#include <iostream>
+
 #define LOG_INFO(logFormat, ...) \
     do { \
         Logger *logger = Logger::instance(); \

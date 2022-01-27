@@ -62,6 +62,7 @@ private:
     void handleClose();
     void handleError();
 
+    void sendInLoop(const std::string& s);
     void sendInLoop(const void* message, size_t len);
     void shutDownInLoop();
 private:

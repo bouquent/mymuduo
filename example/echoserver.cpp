@@ -55,10 +55,14 @@ void Server::onMessage(const TcpConnectionPtr& conn, Buffer* buffer, Timestamp t
 }
 
 
-int main()
+int main(int argc, char** argv)
 {
+    if (argc != 3) {
+        printf("please input vaild address and port!\n");
+        exit(1);
+    }
     EventLoop loop;
-    InetAddr localAddr("0.0.0.0", 8888);
+    InetAddr localAddr(argv[1], atoi(argv[2]));
     Server server(&loop, localAddr, "czz");
 
     server.start();

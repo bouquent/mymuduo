@@ -23,8 +23,8 @@ class TcpServer : noncopyable
 public:
     enum Option
     {
-        kNoReusePort,
-        kReusePort,
+        kNoReusePort = 0,
+        kReusePort = 1,
     };
 public:
     using ThreadInitCallback = std::function<void(EventLoop*)>;

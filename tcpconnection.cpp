@@ -79,9 +79,15 @@ void TcpConnection::send(const std::string& buf)
             /*在执行这个函数的时候一般都是在执行MessageCallback，所以一般是在自己的线程中*/
              sendInLoop(buf.c_str(), buf.size());
         } else {
-            loop_->runInLoop(std::bind(&TcpConnection::sendInLoop, this, buf.c_str(), buf.size()));
+            void(TcpConnection::*fp)(const std::string& s) = &TcpConnection::sendInLoop;
+            loop_->runInLoop(std::bind(fp, this, std::string(buf)) );
         }    
     }
+}
+
+void TcpConnection::sendInLoop(const std::string& s)
+{
+    sendInLoop(s.c_str(), s.size());
 }
 
 

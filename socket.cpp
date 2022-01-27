@@ -20,7 +20,7 @@ void Socket::bindAddr(const InetAddr& localAddr)
     struct sockaddr_in ser_addr = localAddr.getSockAddr();
     int ret = ::bind(sockfd_, (struct sockaddr*) &ser_addr, sizeof(ser_addr));
     if (ret != 0) {
-        LOG_FATAL("[%s]:[%s] socket bind error!", __FILE__, __func__);
+        LOG_FATAL("[%s]:[%s] socket bind error, errno is %d!", __FILE__, __func__, errno);
     }
 }
 
@@ -38,7 +38,7 @@ int Socket::accept(InetAddr* peerAddr)
     struct sockaddr_in cli_addr;
     bzero(&cli_addr, sizeof(cli_addr));
     socklen_t len = sizeof(cli_addr);
-    int connfd = ::accept(sockfd_, (struct sockaddr*) &cli_addr, &len);
+    int connfd = ::accept4(sockfd_, (struct sockaddr*) &cli_addr, &len, SOCK_NONBLOCK | SOCK_CLOEXEC);
 
     if (connfd >= 0) {
         peerAddr->setSockAddr(cli_addr);

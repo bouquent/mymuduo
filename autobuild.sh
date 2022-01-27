@@ -21,6 +21,6 @@ do
     cp $header /usr/include/mymuduo
 done
 
-cp `pwd`/lib/libmymuduo.so /usr/lib
+cp `pwd`/lib/libmymuduo.so /usr/local/lib
 
 ldconfig
