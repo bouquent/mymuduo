@@ -29,7 +29,7 @@ TcpServer::TcpServer(EventLoop *loop,
     : baseLoop_(CheckLoopNotNull(loop))
     , ipPort_(addr.toIpPort())
     , name_(nameArg)
-    , acceptor_(new Acceptor(loop, addr, option))
+    , acceptor_(new Acceptor(loop, addr, option == kReusePort))
     , threadPool_(new EventLoopThreadPool(loop, nameArg))
     , started_(0)
     , nextConnId_(0)

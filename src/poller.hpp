@@ -14,6 +14,12 @@ class Poller : noncopyable
 {
 public:
     using ChannelList = std::vector<Channel*>;
+    enum POLLER_OPT
+    {
+        EPOLL_POLLER = 0,
+        POLL_POLLER,
+    };
+
     Poller(EventLoop *loop = nullptr);
     virtual ~Poller();
 
@@ -28,7 +34,7 @@ public:
     bool hasChannel(Channel*);
 
     /*生成一个对应的Poller实例(epoll或poll)*/
-    static Poller* newDefaultPoller(EventLoop*);
+    static Poller* newDefaultPoller(EventLoop*, POLLER_OPT);
 protected:
     using ChannelMap = std::map<int, Channel*>;
     ChannelMap channels_;

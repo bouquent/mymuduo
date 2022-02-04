@@ -8,10 +8,9 @@
 #include <mutex>
 
 #include "eventloop.hpp"
-#include "epollpoller.hpp"
+#include "poller.hpp"
 #include "channel.hpp"
 #include "logging.hpp"
-#include "poller.hpp"
 #include "currentthread.hpp"
 
 __thread EventLoop *t_loopInThisThread = nullptr;  /*防止一个thread创建多个loop*/
@@ -54,7 +53,7 @@ EventLoop::EventLoop()
     , quit_(false)
     , wakeupFd_(createEventFd())
     , wakeupChannel_(new Channel(this, wakeupFd_))
-    , poller_(Poller::newDefaultPoller(this))
+    , poller_(Poller::newDefaultPoller(this, Poller::EPOLL_POLLER))
     , timerQueue_(new TimerQueue(this))
     , currentActiveChannel_(nullptr)
     , eventHanding_(false)

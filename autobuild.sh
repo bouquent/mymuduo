@@ -5,13 +5,13 @@ set -e
 if [ ! -d `pwd`/build ]; then
     mkdir `pwd`/build
 fi
-
 rm -rf `pwd`/build/*
 
 cd `pwd`/build && cmake .. && make
 
-cd ..
 
+
+cd ../src
 if [ ! -d /usr/include/mymuduo ]; then
     mkdir /usr/include/mymuduo
 fi 
@@ -21,6 +21,9 @@ do
     cp $header /usr/include/mymuduo
 done
 
-cp `pwd`/lib/libmymuduo.so /usr/local/lib
+
+#回到主目录
+cd ..   
+cp lib/libmymuduo.so /usr/local/lib
 
 ldconfig

@@ -23,10 +23,11 @@ Acceptor::Acceptor(EventLoop *loop, const InetAddr& addr, bool option)
     , acceptChannel_(loop, acceptSocket_.fd())   //这里注意acceptorSocket_要在acceptChannel_之前声明
     , listening_(false)
 {
-    acceptSocket_.bindAddr(addr);
-    acceptSocket_.setReuseAddr(true);
+    acceptSocket_.setReuseAddr(true);       //设置一定要在bind之前
     acceptSocket_.setReusePort(option);
-    acceptSocket_.setKeepAlive(option);
+    acceptSocket_.setKeepAlive(true);
+
+    acceptSocket_.bindAddr(addr);
 
     /*有新用户连接，则调用回调handleRead*/
     acceptChannel_.setReadCallback(std::bind(&Acceptor::handleRead, this));

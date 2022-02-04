@@ -67,7 +67,7 @@ void Socket::setTcpNoDelay(bool on)
 void Socket::setReuseAddr(bool on)
 {
     int opt = on ? 1 : 0;
-    int ret = setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
     if (ret != 0) {
         LOG_ERROR("[%s]:%s setsockopt wrong!", __FILE__, __func__);
     }
@@ -76,7 +76,7 @@ void Socket::setReuseAddr(bool on)
 void Socket::setReusePort(bool on)
 {
     int opt = on ? 1 : 0;
-    int ret = setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
     if (ret != 0) {
         LOG_ERROR("[%s]:%s setsockopt wrong!", __FILE__, __func__);
     }
@@ -85,7 +85,7 @@ void Socket::setReusePort(bool on)
 void Socket::setKeepAlive(bool on)
 {
     int opt = on ? 1 : 0;
-    int ret = setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
+    int ret = ::setsockopt(sockfd_, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt));
     if (ret != 0) {
         LOG_ERROR("[%s]:%s setsockopt wrong!", __FILE__, __func__);
     }
