@@ -1,3 +1,3 @@
 cmake to create cmakefile
 
-make to create lib file
+make to create lib file 
