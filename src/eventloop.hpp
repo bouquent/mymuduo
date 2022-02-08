@@ -11,16 +11,16 @@
 #include "timestamp.hpp"
 #include "currentthread.hpp"
 #include "timerqueue.hpp"
+#include "poller.hpp"
 
 class Channel;
-class Poller;
 class EpollPoller;
 
 class EventLoop : noncopyable
 {
 public:
     using Functor = std::function<void()>;
-    EventLoop();
+    EventLoop(Poller::POLLER_OPT pollerOpt = Poller::EPOLL_POLLER);
     ~EventLoop();
     
     void loop();

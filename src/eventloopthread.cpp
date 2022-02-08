@@ -17,8 +17,8 @@ EventLoopThread::~EventLoopThread()
 {
     exiting_ = true;
     if (loop_) {
-        loop_->quit();
-        thread_.join();
+        loop_->quit();      //让子线程结束
+        thread_.join();     //回收子线程
     }
 }
 

@@ -47,13 +47,13 @@ void EventLoop::handleRead()
 }
 
 
-EventLoop::EventLoop()
+EventLoop::EventLoop(Poller::POLLER_OPT pollerOpt)
     : threadId_(CurrentThread::tid())  
     , looping_(false)
     , quit_(false)
     , wakeupFd_(createEventFd())
     , wakeupChannel_(new Channel(this, wakeupFd_))
-    , poller_(Poller::newDefaultPoller(this, Poller::EPOLL_POLLER))
+    , poller_(Poller::newDefaultPoller(this, pollerOpt))
     , timerQueue_(new TimerQueue(this))
     , currentActiveChannel_(nullptr)
     , eventHanding_(false)
